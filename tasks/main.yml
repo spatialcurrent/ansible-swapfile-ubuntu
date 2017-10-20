@@ -1,0 +1,42 @@
+---
+
+- name: "Does swapfile exist?"
+  become: yes
+  become_user: root
+  stat:
+    path: "{{ SWAPFILE_PATH }}"
+    get_checksum: false
+    get_md5: false
+  register: f
+
+- name: "Swap off"
+  become: yes
+  become_user: root
+  shell: "swapoff {{ SWAPFILE_PATH }}"
+  when: f.stat.islnk is defined
+  failed_when: false
+
+- name: "Create swapfile"
+  become: yes
+  become_user: root
+  shell: "fallocate -l {{ SWAPFILE_SIZE }} {{ SWAPFILE_PATH }}"
+
+- name: "Check permissions"
+  become: yes
+  become_user: root
+  file:
+    path: "{{ SWAPFILE_PATH }}"
+    state: file
+    owner: root
+    group: root
+    mode: 0600
+
+- name: "Make swap"
+  become: yes
+  become_user: root
+  shell: "mkswap {{ SWAPFILE_PATH }}"
+
+- name: "Swap on"
+  become: yes
+  become_user: root
+  shell: "swapon {{ SWAPFILE_PATH }}"
